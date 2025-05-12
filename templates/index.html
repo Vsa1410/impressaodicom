@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gerar Relatório DICOM</title>
+</head>
+<body>
+    <h1>Gerar PDF com Imagens DICOM</h1>
+    <form id="form-gerar-pdf" method="POST" action="/gerar-pdf" target="_blank">
+        <label>Copie o caminho da pasta</label><br>
+        <label>Pasta dos DICOMs: <input type="text" name="pasta_dicom" value="dicoms/"></label><br>
+        <label>Logo (caminho): <input type="text" name="logo_path" value="logo.jpg"></label><br>
+        <label>Colunas por página: <input type="number" name="colunas" value="4"></label><br>
+        <label>Linhas por página: <input type="number" name="linhas" value="6"></label><br>
+        <label>Brilho: <input type="range" min="0.5" max="1.5"  step="0.1" name="brilho" value="1.0"></label><br>
+        <label>Contraste: <input type="range" min="0.5" max="1.5"  step="0.1" name="contraste" value="1.0"></label><br>
+        <label>Escala: <input type="range" min="0.5" max="1.5"  step="0.1" name="escala" value="1.0"></label><br>
+        
+        
+        <button type="submit">Gerar PDF</button>
+    </form>
+</body>
+</html>
