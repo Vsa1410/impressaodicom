@@ -5,6 +5,17 @@ from PIL import Image, ImageFont, ImageDraw
 import numpy as np
 from fpdf import FPDF
 from io import BytesIO
+from datetime import datetime
+import zipfile
+import tempfile
+from PIL import Image
+import base64
+from io import BytesIO
+
+
+
+
+
 
 # === CONFIGURAÇÃO DO LAYOUT ===
 def gerar_relatorio_em_pdf(pasta_dicom, logo_path,
@@ -13,7 +24,7 @@ def gerar_relatorio_em_pdf(pasta_dicom, logo_path,
 
     # A3 em orientação vertical
     largura_pagina_mm = 297
-    altura_pagina_mm = 420
+    altura_pagina_mm = 400
     espacamento = 0
     # === CALCULAR TAMANHO DAS IMAGENS ===
     largura_img_mm = (largura_pagina_mm - (layout_colunas + 1) * espacamento) / layout_colunas
@@ -37,8 +48,14 @@ def gerar_relatorio_em_pdf(pasta_dicom, logo_path,
             nome = str(ds.get("PatientName", "Desconhecido"))
             id_paciente = str(ds.get("PatientID", "N/A"))
             nascimento = str(ds.get("PatientBirthDate", "N/A"))
+            data_paciente_formatada = datetime.strptime(nascimento, "%Y%m%d").strftime("%d/%m/%Y")
             sexo = str(ds.get("PatientSex", "N/A"))
-            metadados_paciente = f"Paciente: {nome} | Protocolo: {id_paciente} | Nascimento: {nascimento} | Sexo: {sexo}"
+            if sexo == "M":
+                sexo = "Masculino"
+            elif sexo == "F":
+                sexo = "Feminino"
+            metadados_paciente = f"""Paciente: {nome} | Protocolo: {id_paciente} | 
+                    Data de Nascimento: {data_paciente_formatada} | Sexo: {sexo}"""
 
         imagem = ds.pixel_array
 
@@ -93,26 +110,37 @@ def gerar_relatorio_em_pdf(pasta_dicom, logo_path,
 
         # Criar uma imagem de fundo branca no tamanho ideal e colar a imagem centralizada
         fundo = Image.new("L", (max_w_px, max_h_px), color=255)
-        offset_x = (max_w_px - novo_w)  // 2
+        
+        offset_x = (max_w_px - novo_w) // 2
         offset_y = (max_h_px - novo_h) // 2
+        
+        
         fundo.paste(img_resized, (offset_x, offset_y))
 
         # Inserir dados do exame na primeira imagem (linha 0, coluna 0)
         if linha == 0 and coluna == 0:
             exame = ds.get("StudyDescription", "Exame não especificado")
             data_exame = ds.get("StudyDate", "00000000")
-            try:
-                data_exame_formatada = datetime.strptime(data_exame, "%Y%m%d").strftime("%d/%m/%Y")
-            except:
-                data_exame_formatada = data_exame
+            corte = ds.get("SeriesDescription", "Serie não especificada")
+            data_exame = ds.get("StudyDate", "")
+            data_exame = str(ds.get("StudyDate", "")).strip()
+            data_exame_raw = str(ds.get("StudyDate", "")).strip()
+            if len(data_exame_raw) == 8:
+                data_exame_raw = data_exame_raw[:4] + data_exame_raw[4:6] + data_exame_raw[6:]
+
+            data_exame_formatada = datetime.strptime(data_exame_raw, "%Y%m%d").strftime("%d/%m/%Y")
+
+
 
             draw = ImageDraw.Draw(fundo)
-            texto = f"{exame} - {data_exame_formatada}"
+            texto = f"""Exame: {exame} - 
+                        Data: {data_exame_formatada}
+                        Sequencia: {corte}"""
             try:
-                fonte_texto = ImageFont.truetype("arial.ttf", 22)
+                fonte_texto = ImageFont.truetype("arial.ttf", 40)
             except:
                 fonte_texto = ImageFont.load_default()
-            draw.text((10, 10), texto, fill=0, font=fonte_texto)
+            draw.text((10, 10), texto, fill=255, font=fonte_texto)
 
         img_path = f"temp_{i}.jpg"
         fundo.save(img_path)
