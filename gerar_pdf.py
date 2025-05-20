@@ -104,33 +104,33 @@ def gerar_relatorio_em_pdf(pasta_dicom, logo_path,
 
         img_w, img_h = img.size
         proporcao = max(max_w_px / img_w, max_h_px / img_h)
-        novo_w = int(img_w * proporcao)
-        novo_h = int(img_h * proporcao)
-        img_resized = img.resize((novo_w, novo_h))
+        novo_w = img_w * proporcao  # Mantém como float para maior precisão
+        novo_h = img_h * proporcao   # Mantém como float para maior precisão
+        
+        # Redimensiona com cálculo float primeiro, depois converte para int
+        img_resized = img.resize((int(novo_w), int(novo_h)), Image.LANCZOS)
 
-        # Criar uma imagem de fundo branca no tamanho ideal e colar a imagem centralizada
+        # Criar uma imagem de fundo branca no tamanho ideal
         fundo = Image.new("L", (max_w_px, max_h_px), color=255)
         
-        offset_x = (max_w_px - novo_w) // 2
-        offset_y = (max_h_px - novo_h) // 2
+        # Calcula offsets como floats primeiro
+        offset_x = (max_w_px - novo_w) / 1.5
+        offset_y = (max_h_px - novo_h) / 2
         
-        
-        fundo.paste(img_resized, (offset_x, offset_y))
+        # Converte para int apenas no momento do paste, mas você pode arredondar para melhor precisão
+        fundo.paste(img_resized, (int(round(offset_x)), int(round(offset_y))))
 
-        # Inserir dados do exame na primeira imagem (linha 0, coluna 0)
+        # Restante do seu código (inserir dados do exame, salvar imagem, etc.)
         if linha == 0 and coluna == 0:
             exame = ds.get("StudyDescription", "Exame não especificado")
             data_exame = ds.get("StudyDate", "00000000")
             corte = ds.get("SeriesDescription", "Serie não especificada")
-            data_exame = ds.get("StudyDate", "")
             data_exame = str(ds.get("StudyDate", "")).strip()
             data_exame_raw = str(ds.get("StudyDate", "")).strip()
             if len(data_exame_raw) == 8:
                 data_exame_raw = data_exame_raw[:4] + data_exame_raw[4:6] + data_exame_raw[6:]
 
             data_exame_formatada = datetime.strptime(data_exame_raw, "%Y%m%d").strftime("%d/%m/%Y")
-
-
 
             draw = ImageDraw.Draw(fundo)
             texto = f"""Exame: {exame} - 
@@ -145,6 +145,7 @@ def gerar_relatorio_em_pdf(pasta_dicom, logo_path,
         img_path = f"temp_{i}.jpg"
         fundo.save(img_path)
 
+        # Aqui você pode usar floats para as posições no PDF
         x = espacamento + coluna * (largura_img_mm + espacamento)
         y = y0 + linha * (altura_img_mm + espacamento)
         pdf.image(img_path, x=x, y=y, w=largura_img_mm, h=altura_img_mm)
